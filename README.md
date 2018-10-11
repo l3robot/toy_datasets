@@ -1,2 +1,7 @@
-# toy_datasets
-A collection of toy datasets
+# Toy Datasets
+
+This is a collection of toy datasets in my projects. Compatible with pytorch.
+
+### List
+
+- SinMix: mixtures of gaussian
