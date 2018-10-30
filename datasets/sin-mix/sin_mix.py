@@ -10,7 +10,33 @@ import os
 import json
 
 import torch
+import torch.nn as nn
 from torch.utils.data import Dataset
+
+
+class SinMix(nn.Module):
+    """
+
+    """
+
+    def __init__(self, amplitudes, phases):
+        super().__init__()
+        #keeps parameters
+        self.amplitudes = amplitudes
+        self.phases = phases
+
+    def forward(self, x):
+        # checks the size of the tensor
+        if len(x.size()) != 2:
+            print(' [!] Error ')
+            raise AttributeError
+
+        # checks if the data is one dimensional
+        if x.size()[-1] != 1:
+            raise AttributeError
+
+        # expand x for one-time computation
+        xx = x.expand()
 
 
 class SinMixDataset(Dataset):
