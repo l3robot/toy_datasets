@@ -15,9 +15,16 @@ import argparse
 import numpy as np
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from .common import printl, ERROR, WARNING, INFO 
 
 
-# CONFIG
+"""
+CONFIG
+"""
+
 
 SIZE = 6000
 NB_SIN = 3
@@ -29,7 +36,118 @@ X_LENGTH = 1000
 AMP_RANGE = 4
 PHASE_RANGE = 5
 
-########
+
+"""
+CLASSES
+"""
+
+
+class SinMixLayer(nn.Module):
+    """
+    Defines a SinMix function layer
+    -------------------------------
+
+    Args:
+        amplitudes (int or FloatTensor): amplitudes of the sinus
+        phases (int or FloatTensor): phases of the sinus
+    """
+
+    def __init__(self, amplitudes, phases):
+        super().__init__()
+        # keeps parameters
+        self.amplitudes = nn.Paramater(amplitudes)
+        self.phases = nn.Paramater(phases)
+
+        # computes the number of sinus
+        self.nb_sin = len(amplitudes)
+
+    def forward(self, x):
+        """
+        Forward pass
+        ------------
+
+        Args:
+            x (FloatTensor): input of the function
+        """
+        # checks the size of the tensor
+        if len(x.size()) != 2:
+            printl(ERROR, f'x must have 2 axis, now {len(x.size())}')
+            raise AttributeError
+
+        # checks if the data is one dimensional
+        if x.size()[-1] != 1:
+            printl(ERROR, f'x must have 1 dimensions, now {x.size()[-1]}')
+            raise AttributeError
+
+        # expand x for one-time computation
+        xx = x.expand(-1, self.nb_sin)
+
+        # computes all sinus and mixes them
+        yy = amplitudes * torch.sin(phases * xx)
+        yy = yy.sum(dim=1)
+
+        return yy
+
+
+class SinMixDataset(Dataset):
+    """
+    Defines the SinMixDataset
+    -------------------------
+
+    Args:
+        root (str): location of the dataset
+        train (bool): flag to load train or test
+    """
+
+    def __init__(self, root, train=True):
+        super().__init__()
+        # keeps parameters
+        self.root = root
+        self.train = train
+
+        # creates paths
+        config_path = os.path.join(root, 'config.json')
+        if train:
+            data_path = os.path.join(root, 'train.pt')
+        else:
+            data_path = os.path.join(root, 'test.pt')
+
+        # loads config
+        with open(config_path, 'r') as f:
+            self.config = json.load(f)
+
+        # loads data
+        self.data = torch.load(data_path)
+
+    def __getitem__(self, idx):
+        return self.data[idx]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __str__(self):
+        # selects params
+        if self.train:
+            mode = 'Train'
+            size = self.config['trainsize']
+        else:
+            mode = 'Test'
+            size = self.config['testsize']
+        nb_sin = self.config['nb_sin']
+        x_space = self.config['x_space']
+
+        # prints to screen
+        to_print = [f' {mode} SinMixDataset:']
+        to_print.append(f'  size: {size}')
+        to_print.append(f'  nb-sin: {nb_sin}')
+        to_print.append(f'  x-space: {x_space}')
+
+        return '\n'.join(to_print)
+
+
+"""
+FUNCTIONS
+"""
 
 
 def create_sin_mix(size=SIZE, nb_sin=NB_SIN):
