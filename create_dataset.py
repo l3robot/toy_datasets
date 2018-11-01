@@ -54,6 +54,8 @@ def create_dataset(dataset_type, root, train_ratio, create_fct, **config):
 
     # save the config
     config['type'] = dataset_type
+    config['train_size'] = train_size
+    config['test_size'] = len(dataset) - train_size
     config['timestamp'] = time.time()
     with open(config_path, 'w') as f:
         json.dump(config, f)
@@ -75,12 +77,12 @@ def datasets():
 @click.argument('root')
 @click.option('--train-ratio', default=0.1, help='size of the dataset')
 @click.option('--size', default=60000, help='size of the dataset')
-@click.option('--nb_sin', default=3, help='the number of sinus in a mix')
-@click.option('--x_min', default=0, help='the min value of a sampled x')
-@click.option('--x_max', default=10, help='the max value of a sampled x')
-@click.option('--x_length', default=1000, help='the number of sampled x')
-@click.option('--amp_range', default=4, help='the range of amplitude [-amp_range, amp_range]')
-@click.option('--phase_range', default=5, help='the range of phase [-phase_range, phase_range]')
+@click.option('--nb-sin', default=3, help='the number of sinus in a mix')
+@click.option('--x-min', default=0, help='the min value of a sampled x')
+@click.option('--x-max', default=10, help='the max value of a sampled x')
+@click.option('--x-length', default=1000, help='the number of sampled x')
+@click.option('--amp-range', default=4, help='the range of amplitude [-amp_range, amp_range]')
+@click.option('--phase-range', default=5, help='the range of phase [-phase_range, phase_range]')
 def sin_mix(root, train_ratio, **config):
     """
     Creates a sin-mix dataset
@@ -100,7 +102,37 @@ def sin_mix(root, train_ratio, **config):
     create_dataset("sin-mix", root, train_ratio, create, **config)
 
 
+@click.command()
+@click.argument('root')
+@click.option('--train-ratio', default=0.1, help='size of the dataset')
+@click.option('--size', default=60000, help='size of the dataset')
+@click.option('--x-min', default=0, help='the min value of a sampled x')
+@click.option('--x-max', default=10, help='the max value of a sampled x')
+@click.option('--x-length', default=1000, help='the number of sampled x')
+@click.option('--slope-range', default=4, help='the range of slope [-slope_range, slope_range]')
+@click.option('--y-intercept-range', default=5, help='the range of y-intercept \
+               [-y_intercept_range, y_intercept_range]')
+def lines(root, train_ratio, **config):
+    """
+    Creates a sin-mix dataset
+
+    Args:
+        root (str): path where to save the dataset
+        train-ratio (float): ratio of the train dataset
+        size (int): the size of the dataset (default: 6000)
+        x_min (int): the min sampled x (default: 0)
+        x_max (int): the max sampled x (default: 10)
+        x_length (int): the number of sampled x (default: 1000)
+        slope_range (int): the range of slope [-slope_range, slope_range] (default: 4)
+        y_intercept_range (int): the range of y_intercept [-y_intercept_range,
+         y_intercept_range] (default: 5)
+    """
+    from datasets.in_1d.lines import create
+    create_dataset("lines", root, train_ratio, create, **config)
+
+
 datasets.add_command(sin_mix)
+datasets.add_command(lines)
 
 
 if __name__ == '__main__':
