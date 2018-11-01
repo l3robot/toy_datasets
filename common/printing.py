@@ -22,7 +22,7 @@ def printl(lvl, string, file=None):
         string (str): string to write
         file (file-like object): the file to write (optional)
     """
-    final_string = f'{HEADER}{string}'
+    final_string = f'{HEADER[lvl]}{string}'
     if file is None:
         print(final_string)
     else:
