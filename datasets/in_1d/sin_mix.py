@@ -28,8 +28,8 @@ class SinMixLayer(nn.Module):
     -------------------------------
 
     Args:
-        amplitudes (int or FloatTensor): amplitudes of the sinus
-        phases (int or FloatTensor): phases of the sinus
+        amplitudes (float or FloatTensor): amplitudes of the sinus
+        phases (float or FloatTensor): phases of the sinus
     """
 
     def __init__(self, amplitudes, phases):

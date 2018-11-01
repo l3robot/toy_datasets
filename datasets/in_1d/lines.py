@@ -28,8 +28,8 @@ class LinesLayer(nn.Module):
     -------------------------------
 
     Args:
-        slope (int or FloatTensor): slope of the line
-        y_intercept (int or FloatTensor): y-intercept of the line
+        slope (float or FloatTensor): slope of the line
+        y_intercept (float or FloatTensor): y-intercept of the line
     """
 
     def __init__(self, slope, y_intercept):
