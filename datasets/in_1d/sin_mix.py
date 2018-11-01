@@ -109,18 +109,28 @@ class SinMixDataset(Dataset):
         # selects params
         if self.train:
             mode = 'Train'
-            size = self.config['trainsize']
+            size = self.config['train_size']
         else:
             mode = 'Test'
-            size = self.config['testsize']
+            size = self.config['test_size']
+
+        # parses the config
         nb_sin = self.config['nb_sin']
-        x_space = self.config['x_space']
+        x_min = self.config['x_min']
+        x_max = self.config['x_max']
+        x_length = self.config['x_length']
+        amp_range = self.config['amp_range']
+        phase_range = self.config['phase_range']
 
         # prints to screen
         to_print = [f' {mode} SinMixDataset:']
         to_print.append(f'  size: {size}')
-        to_print.append(f'  nb-sin: {nb_sin}')
-        to_print.append(f'  x-space: {x_space}')
+        to_print.append(f'  nb_sin: {nb_sin}')
+        to_print.append(f'  x_min: {x_min}')
+        to_print.append(f'  x_max: {x_max}')
+        to_print.append(f'  x_length: {x_length}')
+        to_print.append(f'  amp_range: {amp_range}')
+        to_print.append(f'  phase_range: {phase_range}')
 
         return '\n'.join(to_print)
 
@@ -172,7 +182,7 @@ def create(size, nb_sin, x_min, x_max, x_length, amp_range, phase_range):
 
         # checks if the function already exists in the dataset
         if [amps, phases] in list_params:
-            printl(INFO, 'The function is already drawn, skipping it')
+            printl(INFO, 'The function is already chosen, skipping it')
         else:
             # adds the parameters to the list of parameters
             list_params.append([amps, phases])
