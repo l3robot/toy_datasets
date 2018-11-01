@@ -28,6 +28,7 @@ class SinMixLayer(nn.Module):
     -------------------------------
 
     Args:
+        z_size (FloatTensor): size of the function representation
         nb_sin (int): number of sinus in the mix
     """
 

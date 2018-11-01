@@ -28,8 +28,7 @@ class LineLayer(nn.Module):
     -------------------------------
 
     Args:
-        slope (float or FloatTensor): slope of the line
-        y_intercept (float or FloatTensor): y-intercept of the line
+        z_size (FloatTensor): size of the function representation
     """
 
     def __init__(self, z_size):
