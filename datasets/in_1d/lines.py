@@ -22,9 +22,9 @@ from .common import printl, ERROR, INFO
 """
 CLASSES
 """
-class LinesLayer(nn.Module):
+class LineLayer(nn.Module):
     """
-    Defines a Lines function layer
+    Defines a Line function layer
     -------------------------------
 
     Args:
