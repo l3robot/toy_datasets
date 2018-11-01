@@ -32,19 +32,26 @@ class LineLayer(nn.Module):
         y_intercept (float or FloatTensor): y-intercept of the line
     """
 
-    def __init__(self, slope, y_intercept):
+    def __init__(self, z_size):
         super().__init__()
         # keeps parameters
-        self.slope = nn.Paramater(slope)
-        self.y_intercept = nn.Paramater(y_intercept)
+        self.z_size = z_size
 
-    def forward(self, x):
+        # creates layers
+        self.slope = nn.Linear(z_size, 1)
+        self.y_intercept = nn.Linear(z_size, 1)
+
+    def forward(self, x, z):
         """
         Forward pass
         ------------
 
         Args:
             x (FloatTensor): input of the function
+            z (FloatTensor): representation of the function
+
+        Returns:
+            FloatTensor: the output of the function
         """
         # checks the size of the tensor
         if len(x.size()) != 2:
@@ -56,8 +63,12 @@ class LineLayer(nn.Module):
             printl(ERROR, f'x must have 1 dimensions, now {x.size()[-1]}')
             raise AttributeError
 
+        # computes the parameters of the function
+        slope = self.slope(z)
+        y_intercept = self.y_intercept(z)
+
         # computes the slope
-        y = self.slope * x + self.y_intercept
+        y = slope * x + y_intercept
 
         return y
 
@@ -141,6 +152,9 @@ def create(size, x_min, x_max, x_length, slope_range, y_intercept_range):
         x_length (int): the number of sampled x
         slope_range (int): the range of slope [-slope_range, slope_range]
         y_intercept_range (int): the range of y-intercept [-y_intercept_range, y_intercept_range]
+
+    Returns:
+        List of List of FloatTensor: the datase
     """
     # informs the user
     printl(INFO, f"""A new Lines dataset will be created with

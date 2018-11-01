@@ -28,26 +28,30 @@ class SinMixLayer(nn.Module):
     -------------------------------
 
     Args:
-        amplitudes (float or FloatTensor): amplitudes of the sinus
-        phases (float or FloatTensor): phases of the sinus
+        nb_sin (int): number of sinus in the mix
     """
 
-    def __init__(self, amplitudes, phases):
+    def __init__(self, z_size, nb_sin):
         super().__init__()
         # keeps parameters
-        self.amplitudes = nn.Paramater(amplitudes)
-        self.phases = nn.Paramater(phases)
+        self.z_size = z_size
+        self.nb_sin = nb_sin
 
-        # computes the number of sinus
-        self.nb_sin = len(amplitudes)
+        # creates layers
+        self.amplitudes = nn.Linear(z_size, nb_sin)
+        self.phases = nn.Linear(z_size, nb_sin)
 
-    def forward(self, x):
+    def forward(self, x, z):
         """
         Forward pass
         ------------
 
         Args:
             x (FloatTensor): input of the function
+            z (FloatTensor): representation of the function
+
+        Returns:
+            FloatTensor: the output of the function
         """
         # checks the size of the tensor
         if len(x.size()) != 2:
@@ -59,11 +63,15 @@ class SinMixLayer(nn.Module):
             printl(ERROR, f'x must have 1 dimensions, now {x.size()[-1]}')
             raise AttributeError
 
+        # computes the parameters of the function
+        amplitudes = self.amplitudes(z)
+        phases = self.phases(z)
+
         # expand x for one-time computation
         xx = x.expand(-1, self.nb_sin)
 
         # computes all sinus and mixes them
-        yy = self.amplitudes * torch.sin(self.phases * xx)
+        yy = amplitudes * torch.sin(phases * xx)
         y = yy.sum(dim=1)
 
         return y
@@ -151,6 +159,9 @@ def create(size, nb_sin, x_min, x_max, x_length, amp_range, phase_range):
         x_length (int): the number of sampled x
         amp_range (int): the range of amplitude [-amp_range, amp_range]
         phase_range (int): the range of phase [-phase_range, phase_range]
+
+    Returns:
+        List of List of FloatTensor: the dataset
     """
     # informs the user
     printl(INFO, f"""A new SinMix dataset will be created with
