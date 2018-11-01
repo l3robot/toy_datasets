@@ -1,47 +1,27 @@
 """
-This script can be used to create a SinMixDataSet
--------------------------------------------------
+This module defines the SinMixDataSet dataset
+---------------------------------------------
 
 author: Louis-Émile Robitaille (l3robot)
 date-of-creation: 2018-10-11
 """
 
 import os
-import time
 import json
 import random
-import argparse
 
 import numpy as np
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torch.utils.data import Dataset
 
-from .common import printl, ERROR, WARNING, INFO 
-
-
-"""
-CONFIG
-"""
-
-
-SIZE = 6000
-NB_SIN = 3
-
-X_MIN = 0
-X_MAX = 10
-X_LENGTH = 1000
-
-AMP_RANGE = 4
-PHASE_RANGE = 5
+from .common import printl, ERROR, INFO
 
 
 """
 CLASSES
 """
-
-
 class SinMixLayer(nn.Module):
     """
     Defines a SinMix function layer
@@ -83,10 +63,10 @@ class SinMixLayer(nn.Module):
         xx = x.expand(-1, self.nb_sin)
 
         # computes all sinus and mixes them
-        yy = amplitudes * torch.sin(phases * xx)
-        yy = yy.sum(dim=1)
+        yy = self.amplitudes * torch.sin(self.phases * xx)
+        y = yy.sum(dim=1)
 
-        return yy
+        return y
 
 
 class SinMixDataset(Dataset):
@@ -96,7 +76,7 @@ class SinMixDataset(Dataset):
 
     Args:
         root (str): location of the dataset
-        train (bool): flag to load train or test
+        train (bool): flag to load train or test (default=True)
     """
 
     def __init__(self, root, train=True):
@@ -106,18 +86,18 @@ class SinMixDataset(Dataset):
         self.train = train
 
         # creates paths
-        config_path = os.path.join(root, 'config.json')
+        self.config_path = os.path.join(root, 'config.json')
         if train:
-            data_path = os.path.join(root, 'train.pt')
+            self.data_path = os.path.join(root, 'train.pt')
         else:
-            data_path = os.path.join(root, 'test.pt')
+            self.data_path = os.path.join(root, 'test.pt')
 
         # loads config
-        with open(config_path, 'r') as f:
-            self.config = json.load(f)
+        with open(self.config_path, 'r') as file:
+            self.config = json.load(file)
 
         # loads data
-        self.data = torch.load(data_path)
+        self.data = torch.load(self.data_path)
 
     def __getitem__(self, idx):
         return self.data[idx]
@@ -148,86 +128,64 @@ class SinMixDataset(Dataset):
 """
 FUNCTIONS
 """
-
-
-def create_sin_mix(size=SIZE, nb_sin=NB_SIN):
+def create(size, nb_sin, x_min, x_max, x_length, amp_range, phase_range):
     """
-    TODO: docstring
+    Creates a SinMix dataset
+    ------------------------
+
+    Args:
+        size (int): the size of the dataset
+        nb_sin (int): the number of sinus in a mix
+        x_min (int): the min value of a sampled x
+        x_max (int): the max value of a sampled x
+        x_length (int): the number of sampled x
+        amp_range (int): the range of amplitude [-amp_range, amp_range]
+        phase_range (int): the range of phase [-phase_range, phase_range]
     """
-    data = []
+    # informs the user
+    printl(INFO, f"""A new SinMix dataset will be created with
+          > {nb_sin} sinus
+          > x_min: {x_min}, x_max {x_max}, x_length: {x_length}
+          > amplitude range: [-{amp_range}, {amp_range}]
+          > phase range: [-{phase_range}, {phase_range}]""")
+
+    # main creation loop
+    data, list_params = [], []
     for i in range(size):
         # creates the x and y space
-        x = np.linspace(X_MIN, X_MAX, X_LENGTH)
+        x = np.linspace(x_min, x_max, x_length)
         y = np.zeros_like(x)
 
         # creates random mixture of sin
-        des, amps, phases = [], [], []
+        amps, phases = [], []
         for _ in range(nb_sin):
-            amp = random.random() * AMP_RANGE * 2 - AMP_RANGE
-            phase = random.random() * PHASE_RANGE * 2 - PHASE_RANGE
+            # draw an amplitude and a phase
+            amp = random.random() * amp_range * 2 - amp_range
+            phase = random.random() * phase_range * 2 - phase_range
+
+            # computes the outputs
             y += amp * np.sin(phase * x)
-            amps.append(amp); phases.append(phase)
-            des.append(f'{amp:.2f}sin({phase:.2f}x)')
 
-        # convert to torch tensor
-        y = torch.tensor(y).float()
-        params = torch.tensor([amps, phases]).float()
+            # adds to the accumulators
+            amps.append(amp)
+            phases.append(phase)
 
-        # adds the sin to data
-        data.append([y, params])
+        # checks if the function already exists in the dataset
+        if [amps, phases] in list_params:
+            printl(INFO, 'The function is already drawn, skipping it')
+        else:
+            # adds the parameters to the list of parameters
+            list_params.append([amps, phases])
 
-        # print to screen
-        if (i + 1) % int(0.1 * size) == 0:
-            print(' [-] Mixture {:3}% done'.format(int(100*((i + 1) / size))))
+            # converts to torch tensor
+            y = torch.FloatTensor(y).float()
+            params = torch.FloatTensor([amps, phases]).float()
+
+            # adds the function to data
+            data.append([y, params])
+
+            # prints to screen
+            if (i + 1) % int(0.1 * size) == 0:
+                printl(INFO, 'Mixture {:3}% done'.format(int(100*((i + 1) / size))))
 
     return data
-
-
-if __name__ == '__main__':
-    # creates args parser
-    parser = argparse.ArgumentParser(description='Creating a SinMixDataset')
-
-    # defines dataset arguments
-    parser.add_argument('--trainsize', metavar='size', type=int,\
-        help='number of sin mixtures in trainset', default=SIZE)
-    parser.add_argument('--testsize', metavar='size', type=int,\
-        help='number of sin mixtures in testset', default=SIZE)
-    parser.add_argument('--nb-sin', metavar='nb', type=int,\
-        help='number of sin in a mixture (2 params per sin)', default=NB_SIN)
-
-    # defines logistic arguments
-    parser.add_argument('root', metavar='folder', type=str,
-                        help='location of the dataset root folder')
-
-    # parses args
-    config = vars(parser.parse_args())
-
-    # creates the datasets
-    print(' [-] Creating the train dataset')
-    trainset = create_sin_mix(config['trainsize'], config['nb_sin'])
-    print(' [-] Creating the test dataset')
-    testset = create_sin_mix(config['testsize'], config['nb_sin'])
-
-    # check if the dataset folder already exists
-    if os.path.isdir(config['root']):
-        print(' [-] A dataset already exists at this location')
-        exit()
-
-    else:
-        # creates the root folder
-        os.mkdir(config['root'])
-
-        # creates the paths
-        config_path = os.path.join(config['root'], 'config.json')
-        train_path = os.path.join(config['root'], 'train.pt')
-        test_path = os.path.join(config['root'], 'test.pt')
-
-        # save the config
-        config['x_space'] = [X_MIN, X_MAX, X_LENGTH]
-        config['timestamp'] = time.time()
-        with open(config_path, 'w') as f:
-            json.dump(config, f)
-
-        # save the dataset
-        torch.save(trainset, train_path)
-        torch.save(testset, test_path)
