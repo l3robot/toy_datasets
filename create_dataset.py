@@ -131,8 +131,38 @@ def lines(root, train_ratio, **config):
     create_dataset("lines", root, train_ratio, create, **config)
 
 
+@click.command()
+@click.argument('root')
+@click.option('--train-ratio', default=0.1, help='size of the dataset')
+@click.option('--size', default=60000, help='size of the dataset')
+@click.option('--x-min', default=0, help='the min value of a sampled x')
+@click.option('--x-max', default=10, help='the max value of a sampled x')
+@click.option('--x-length', default=1000, help='the number of sampled x')
+@click.option('--a-range', default=4, help='the range of parameter a [-a_range, a_range]')
+@click.option('--b-range', default=4, help='the range of parameter b [-b_range, b_range]')
+@click.option('--c-range', default=4, help='the range of parameter c [-c_range, c_range]')
+def parabolas(root, train_ratio, **config):
+    """
+    Creates a sin-mix dataset
+
+    Args:
+        root (str): path where to save the dataset
+        train-ratio (float): ratio of the train dataset
+        size (int): the size of the dataset (default: 6000)
+        x_min (int): the min sampled x (default: 0)
+        x_max (int): the max sampled x (default: 10)
+        x_length (int): the number of sampled x (default: 1000)
+        a_range (int): the range of parameter a [-a_range, a_range] (default: 4)
+        b_range (int): the range of parameter b [-b_range, b_range] (default: 4)
+        c_range (int): the range of parameter c [-c_range, c_range] (default: 4)
+    """
+    from datasets.in_1d.parabolas import create
+    create_dataset("parabolas", root, train_ratio, create, **config)
+
+
 datasets.add_command(sin_mix)
 datasets.add_command(lines)
+datasets.add_command(parabolas)
 
 
 if __name__ == '__main__':
