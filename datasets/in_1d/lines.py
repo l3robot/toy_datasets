@@ -153,7 +153,7 @@ def create(size, x_min, x_max, x_length, slope_range, y_intercept_range):
         y_intercept_range (int): the range of y-intercept [-y_intercept_range, y_intercept_range]
 
     Returns:
-        List of List of FloatTensor: the datase
+        List of List of FloatTensor: the dataset
     """
     # informs the user
     printl(INFO, f"""A new Lines dataset will be created with
