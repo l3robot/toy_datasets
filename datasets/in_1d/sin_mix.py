@@ -16,7 +16,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 
-from .common import printl, ERROR, INFO
+from .common import printl, ERROR, WARNING, INFO
 
 
 """
@@ -26,6 +26,8 @@ class SinMixLayer(nn.Module):
     """
     Defines a SinMix function layer
     -------------------------------
+
+    y += a * np.sin(b * x + c)
 
     Args:
         z_size (FloatTensor): size of the function representation
@@ -39,8 +41,9 @@ class SinMixLayer(nn.Module):
         self.nb_sin = nb_sin
 
         # creates layers
-        self.amplitudes = nn.Linear(z_size, nb_sin)
-        self.phases = nn.Linear(z_size, nb_sin)
+        self.aa = nn.Linear(z_size, nb_sin)
+        self.bb = nn.Linear(z_size, nb_sin)
+        self.cc = nn.Linear(z_size, nb_sin)
 
     def forward(self, x, z):
         """
@@ -65,14 +68,15 @@ class SinMixLayer(nn.Module):
             raise AttributeError
 
         # computes the parameters of the function
-        amplitudes = self.amplitudes(z)
-        phases = self.phases(z)
+        aa = self.aa(z)
+        bb = self.bb(z)
+        cc = self.cc(z)
 
         # expand x for one-time computation
         xx = x.expand(-1, self.nb_sin)
 
         # computes all sinus and mixes them
-        yy = amplitudes * torch.sin(phases * xx)
+        yy = aa * torch.sin(bb * xx + cc)
         y = yy.sum(dim=1)
 
         return y
@@ -128,8 +132,10 @@ class SinMixDataset(Dataset):
         x_min = self.config['x_min']
         x_max = self.config['x_max']
         x_length = self.config['x_length']
-        amp_range = self.config['amp_range']
-        phase_range = self.config['phase_range']
+        y_range = self.config['y_range']
+        a_range = self.config['a_range']
+        b_range = self.config['b_range']
+        c_range = self.config['c_range']
 
         # prints to screen
         to_print = [f' {mode} SinMixDataset:']
@@ -138,8 +144,10 @@ class SinMixDataset(Dataset):
         to_print.append(f'  x_min: {x_min}')
         to_print.append(f'  x_max: {x_max}')
         to_print.append(f'  x_length: {x_length}')
-        to_print.append(f'  amp_range: {amp_range}')
-        to_print.append(f'  phase_range: {phase_range}')
+        to_print.append(f'  y_range: {y_range}')
+        to_print.append(f'  a_range: {a_range}')
+        to_print.append(f'  b_range: {b_range}')
+        to_print.append(f'  c_range: {c_range}')
 
         return '\n'.join(to_print)
 
@@ -147,7 +155,7 @@ class SinMixDataset(Dataset):
 """
 FUNCTIONS
 """
-def create(size, nb_sin, x_min, x_max, x_length, amp_range, phase_range):
+def create(size, nb_sin, x_min, x_max, x_length, y_range, a_range, b_range, c_range):
     """
     Creates a SinMix dataset
     ------------------------
@@ -158,8 +166,10 @@ def create(size, nb_sin, x_min, x_max, x_length, amp_range, phase_range):
         x_min (int): the min value of a sampled x
         x_max (int): the max value of a sampled x
         x_length (int): the number of sampled x
-        amp_range (int): the range of amplitude [-amp_range, amp_range]
-        phase_range (int): the range of phase [-phase_range, phase_range]
+        y_range (int): guarantees an output y inside [-y_range, y_range]
+        a_range (int): the range of a [-a_range, a_range]
+        b_range (int): the range of b [-b_range, b_range]
+        c_range (int): the range of c [-c_range, c_range]
 
     Returns:
         List of List of FloatTensor: the dataset
@@ -168,8 +178,20 @@ def create(size, nb_sin, x_min, x_max, x_length, amp_range, phase_range):
     printl(INFO, f"""A new SinMix dataset will be created with
           > {nb_sin} sinus
           > x_min: {x_min}, x_max {x_max}, x_length: {x_length}
-          > amplitude range: [-{amp_range}, {amp_range}]
-          > phase range: [-{phase_range}, {phase_range}]""")
+          > y range: [-{y_range}, {y_range}]
+          > a range: [-{a_range}, {a_range}]
+          > b range: [-{b_range}, {b_range}]
+          > c range: [-{c_range}, {c_range}]""")
+
+    # computes a new range
+    a_new_range = y_range / nb_sin
+    a_new_range = min(a_new_range, a_range)
+
+    # informs the user
+    if a_new_range != a_range:
+        printl(WARNING, f"""The range of parameter a [-{a_range:.2f}, {a_range:.2f}]
+            has been change to [-{a_new_range:.2f}, {a_new_range:.2f}]
+            due to the range of y [-{y_range:.2f}, {y_range:.2f}]""")
 
     # main creation loop
     data, list_params = [], []
@@ -179,29 +201,34 @@ def create(size, nb_sin, x_min, x_max, x_length, amp_range, phase_range):
         y = np.zeros_like(x)
 
         # creates random mixture of sin
-        amps, phases = [], []
+        aa, bb, cc = [], [], []
         for _ in range(nb_sin):
-            # draw an amplitude and a phase
-            amp = random.random() * amp_range * 2 - amp_range
-            phase = random.random() * phase_range * 2 - phase_range
+            # draw an a and a b
+            a = random.random() * a_new_range * 2 - a_new_range
+            b = random.random() * b_range * 2 - b_range
+            c = random.random() * c_range * 2 - c_range
 
             # computes the outputs
-            y += amp * np.sin(phase * x)
+            y += a * np.sin(b * x + c)
 
             # adds to the accumulators
-            amps.append(amp)
-            phases.append(phase)
+            aa.append(a)
+            bb.append(b)
+            cc.append(c)
+
+        # checks if the y range works
+        assert (np.abs(y) < y_range).all()
 
         # checks if the function already exists in the dataset
-        if [amps, phases] in list_params:
+        if [aa, bb] in list_params:
             printl(INFO, 'The function is already chosen, skipping it')
         else:
             # adds the parameters to the list of parameters
-            list_params.append([amps, phases])
+            list_params.append([aa, bb, cc])
 
             # converts to torch tensor
             y = torch.FloatTensor(y).float()
-            params = torch.FloatTensor([amps, phases]).float()
+            params = torch.FloatTensor([aa, bb, cc]).float()
 
             # adds the function to data
             data.append([y, params])

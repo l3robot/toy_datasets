@@ -16,7 +16,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 
-from .common import printl, ERROR, INFO
+from .common import printl, ERROR, WARNING, INFO
 
 
 """
@@ -37,8 +37,8 @@ class LineLayer(nn.Module):
         self.z_size = z_size
 
         # creates layers
-        self.slope = nn.Linear(z_size, 1)
-        self.y_intercept = nn.Linear(z_size, 1)
+        self.a = nn.Linear(z_size, 1)
+        self.b = nn.Linear(z_size, 1)
 
     def forward(self, x, z):
         """
@@ -63,11 +63,11 @@ class LineLayer(nn.Module):
             raise AttributeError
 
         # computes the parameters of the function
-        slope = self.slope(z)
-        y_intercept = self.y_intercept(z)
+        a = self.a(z)
+        b = self.b(z)
 
-        # computes the slope
-        y = slope * x + y_intercept
+        # computes the a
+        y = a * x + b
 
         return y
 
@@ -121,8 +121,9 @@ class LinesDataset(Dataset):
         x_min = self.config['x_min']
         x_max = self.config['x_max']
         x_length = self.config['x_length']
-        slope_range = self.config['slope_range']
-        y_intercept_range = self.config['y_intercept_range']
+        y_range = self.config['y_range']
+        a_range = self.config['a_range']
+        b_range = self.config['b_range']
 
         # prints to screen
         to_print = [f' {mode} LinesDataset:']
@@ -130,8 +131,9 @@ class LinesDataset(Dataset):
         to_print.append(f'  x_min: {x_min}')
         to_print.append(f'  x_max: {x_max}')
         to_print.append(f'  x_length: {x_length}')
-        to_print.append(f'  slope_range: {slope_range}')
-        to_print.append(f'  y_intercept_range: {y_intercept_range}')
+        to_print.append(f'  y_range: {y_range}')
+        to_print.append(f'  a_range: {a_range}')
+        to_print.append(f'  b_range: {b_range}')
 
         return '\n'.join(to_print)
 
@@ -139,7 +141,7 @@ class LinesDataset(Dataset):
 """
 FUNCTIONS
 """
-def create(size, x_min, x_max, x_length, slope_range, y_intercept_range):
+def create(size, x_min, x_max, x_length, y_range, a_range, b_range):
     """
     Creates a Lines dataset
     ------------------------
@@ -149,8 +151,9 @@ def create(size, x_min, x_max, x_length, slope_range, y_intercept_range):
         x_min (int): the min value of a sampled x
         x_max (int): the max value of a sampled x
         x_length (int): the number of sampled x
-        slope_range (int): the range of slope [-slope_range, slope_range]
-        y_intercept_range (int): the range of y-intercept [-y_intercept_range, y_intercept_range]
+        y_range (int): guarantees an output y inside [-y_range, y_range]
+        a_range (int): the range of a [-a_range, a_range]
+        b_range (int): the range of b [-b_range, b_range]
 
     Returns:
         List of List of FloatTensor: the dataset
@@ -158,33 +161,76 @@ def create(size, x_min, x_max, x_length, slope_range, y_intercept_range):
     # informs the user
     printl(INFO, f"""A new Lines dataset will be created with
           > x_min: {x_min}, x_max {x_max}, x_length: {x_length}
-          > slope range: [-{slope_range}, {slope_range}]
-          > y-intercept range: [-{y_intercept_range}, {y_intercept_range}]""")
+          > y range: [-{y_range}, {y_range}]
+          > a range: [-{a_range}, {a_range}]
+          > b range: [-{b_range}, {b_range}]""")
+
+    # computes new range for parameter a for y_range
+    a_new_range = (2 * y_range) / (x_max - x_min)
+    a_new_range = min(a_new_range, a_range)
+
+    # informs the user
+    if a_new_range != a_range:
+        printl(WARNING, f"""The range of parameter a [-{a_range:.2f}, {a_range:.2f}]
+            has been change to [-{a_new_range:.2f}, {a_new_range:.2f}]
+            due to the range of y [-{y_range:.2f}, {y_range:.2f}]""")
+
+    # computes new range for parameter a for b_range
+    a_new_new_range = (y_range + b_range) / max(abs(x_max), abs(x_min))
+    a_new_new_range = min(a_new_new_range, a_new_range)
+
+    # informs the user
+    if a_new_new_range != a_new_range:
+        printl(WARNING, f"""The range of parameter a [-{a_range:.2f}, {a_range:.2f}]
+            has been change to [-{a_new_new_range:.2f}, {a_new_new_range:.2f}]
+            due to the range of b [-{b_range:.2f}, {b_range:.2f}]""")
+
+    # modifies the range
+    a_new_range = a_new_new_range
 
     # main creation loop
     data, list_params = [], []
     for i in range(size):
         # creates the x and y space
         x = np.linspace(x_min, x_max, x_length)
-        y = np.zeros_like(x)
 
-        # draw an amplitude and a phase
-        slope = random.random() * slope_range * 2 - slope_range
-        y_intercept = random.random() * y_intercept_range * 2 - y_intercept_range
+        # draws parameter a
+        a = random.random() * a_new_range * 2 - a_new_range
+
+        # computes new range for parameter b
+        if a > 0:
+            b_min = max(-b_range, -y_range - a * x_min)
+            b_max = min(b_range, y_range - a * x_max)
+        else:
+            b_min = max(-b_range, -y_range - a * x_max)
+            b_max = min(b_range, y_range - a * x_min)
+        b_new_range = b_max - b_min
+
+        # informs the user
+        # if b_max != b_range or b_min != -b_range:
+        #     printl(WARNING, f"""The range of parameter b [-{b_range:.2f}, {b_range:.2f}]
+        #         has been change to [{b_min:.2f}, {b_max:.2f}]
+        #         due to the range of y [-{y_range:.2f}, {y_range:.2f}]""")
+
+        # draws parameter b
+        b = random.random() * b_new_range + b_min
 
         # computes the outputs
-        y += slope * x + y_intercept
+        y = a * x + b
+
+        # checks if the y range works
+        assert (np.abs(y) < y_range).all()
 
         # checks if the function already exists in the dataset
-        if [slope, y_intercept] in list_params:
+        if [a, b] in list_params:
             printl(INFO, 'The function is already chosen, skipping it')
         else:
             # adds the parameters to the list of parameters
-            list_params.append([slope, y_intercept])
+            list_params.append([a, b])
 
             # converts to torch tensor
             y = torch.FloatTensor(y).float()
-            params = torch.FloatTensor([slope, y_intercept]).float()
+            params = torch.FloatTensor([a, b]).float()
 
             # adds the function to data
             data.append([y, params])

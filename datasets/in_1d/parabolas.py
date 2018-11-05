@@ -16,7 +16,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 
-from .common import printl, ERROR, INFO
+from .common import printl, ERROR, WARNING, INFO
 
 
 """
@@ -123,6 +123,7 @@ class ParabolasDataset(Dataset):
         x_min = self.config['x_min']
         x_max = self.config['x_max']
         x_length = self.config['x_length']
+        y_range = self.config['y_range']
         a_range = self.config['a_range']
         b_range = self.config['b_range']
         c_range = self.config['c_range']
@@ -133,6 +134,7 @@ class ParabolasDataset(Dataset):
         to_print.append(f'  x_min: {x_min}')
         to_print.append(f'  x_max: {x_max}')
         to_print.append(f'  x_length: {x_length}')
+        to_print.append(f'  y_range: {y_range}')
         to_print.append(f'  a_range: {a_range}')
         to_print.append(f'  b_range: {b_range}')
         to_print.append(f'  c_range: {c_range}')
@@ -143,7 +145,7 @@ class ParabolasDataset(Dataset):
 """
 FUNCTIONS
 """
-def create(size, x_min, x_max, x_length, a_range, b_range, c_range):
+def create(size, x_min, x_max, x_length, y_range, a_range, b_range, c_range):
     """
     Creates a Parabolas dataset
     ------------------------
@@ -153,9 +155,11 @@ def create(size, x_min, x_max, x_length, a_range, b_range, c_range):
         x_min (int): the min value of a sampled x
         x_max (int): the max value of a sampled x
         x_length (int): the number of sampled x
+        y_range (int): guarantees an output y inside [-y_range, y_range]
         a_range (int): the range of slope [-a_range, a_range]
         b_range (int): the range of y-intercept [-b_range, b_range]
         c_range (int): the range of y-intercept [-c_range, c_range]
+        y_range(int):
 
     Returns:
         List of List of FloatTensor: the dataset
@@ -163,6 +167,7 @@ def create(size, x_min, x_max, x_length, a_range, b_range, c_range):
     # informs the user
     printl(INFO, f"""A new Parabolas dataset will be created with
           > x_min: {x_min}, x_max {x_max}, x_length: {x_length}
+          > y range: [-{y_range}, {y_range}]
           > a range: [-{a_range}, {a_range}]
           > b range: [-{b_range}, {b_range}]
           > c range: [-{c_range}, {c_range}]""")
@@ -172,15 +177,80 @@ def create(size, x_min, x_max, x_length, a_range, b_range, c_range):
     for i in range(size):
         # creates the x and y space
         x = np.linspace(x_min, x_max, x_length)
-        y = np.zeros_like(x)
 
-        # draw an amplitude and a phase
+        # draws parameter a
         a = random.random() * a_range * 2 - a_range
-        b = random.random() * b_range * 2 - b_range
-        c = random.random() * c_range * 2 - c_range
+
+        # computes new range for parameter b to keep the
+        # maxima in the x_space
+        if a < 0:
+            b_min = -2 * a * x_min
+            b_max = -2 * a * x_max
+        else:
+            b_min = -2 * a * x_max
+            b_max = -2 * a * x_min
+        b_new_range = b_max - b_min
+
+        print(f'a -> {a:.2f}')
+
+        # informs the user
+        if b_max != b_range or b_min != -b_range:
+            printl(WARNING, f"""The range of parameter b [-{b_range:.2f}, {b_range:.2f}]
+                has been change to [{b_min:.2f}, {b_max:.2f}]
+                due to maxima in the x_space""")
+
+        # computes the new range for parameter b for y_range
+        b_new_new_range = np.sqrt(8 * y_range * np.abs(a))
+        b_new_min = max(-b_new_new_range, b_min)
+        b_new_max = min(b_new_new_range, b_max)
+        b_new_new_range = b_new_max - b_new_min
+
+        # informs the user
+        if b_new_max != b_max or b_new_min != -b_min:
+            printl(WARNING, f"""The range of parameter b [-{b_range:.2f}, {b_range:.2f}]
+                has been change to [{b_new_min:.2f}, {b_new_max:.2f}]
+                due to the range of y [-{y_range:.2f}, {y_range:.2f}]""")
+
+        # modifies the range
+        b_min = b_new_min
+        b_max = b_new_max
+        b_new_range = b_new_new_range
+
+        # draws parameter b
+        b = random.random() * b_new_range + b_min
+
+        # computes new range for parameter c
+        hs = (b ** 2) / (4 * a)
+        if a < 0:
+            c_min = max(-c_range, hs - y_range)
+            c_max = min(c_range, y_range)
+        else:
+            c_min = max(-c_range, -y_range)
+            c_max = min(c_range, hs + y_range)
+        c_new_range = c_max - c_min
+
+        # print('{:.2f} {:.2f}'.format(-c_range, hs - y_range))
+        # print('{:.2f} {:.2f}'.format(c_range, y_range))
+        # print('{:.2f} {:.2f}'.format(-c_range, -y_range))
+        # print('{:.2f} {:.2f}'.format(c_range, hs + y_range))
+        # exit()
+
+        # informs the user
+        if c_max != c_range or c_min != -c_range:
+            printl(WARNING, f"""The range of parameter c [-{c_range:.2f}, {c_range:.2f}]
+                has been change to [{c_min:.2f}, {c_max:.2f}]
+                due to the range of y [-{y_range:.2f}, {y_range:.2f}]""")
+
+        # draws parameter c
+        c = random.random() * c_new_range - c_min
+
+        print('{:.2f} {:.2f} {:.2f}'.format(a, b, c))
 
         # computes the outputs
-        y += a * x ** 2 + b * x + c
+        y = a * x ** 2 + b * x + c
+
+        # checks if the y range works
+        assert (np.abs(y) < y_range).all()
 
         # checks if the function already exists in the dataset
         if [a, b, c] in list_params:
