@@ -26,4 +26,4 @@ def printl(lvl, string, file=None):
     if file is None:
         print(final_string)
     else:
-        f.write(final_string)
+        file.write(final_string)
