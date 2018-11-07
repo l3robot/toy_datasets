@@ -174,7 +174,7 @@ def create(size, nb_sin, x_range, x_length, y_range, f_range):
           > x_min: {x_range}, 
           > x_length: {x_length}
           > y range: [-{y_range}, {y_range}]
-          > f range: [-{f_range}, {f_range}]""")
+          > f range: [0, {f_range}]""")
 
     # computes a new range
     a_range = y_range / nb_sin
@@ -197,7 +197,7 @@ def create(size, nb_sin, x_range, x_length, y_range, f_range):
             # draws parameter f
             f = 0
             while f == 0:
-                f = random.random() * f_range * 2 - f_range
+                f = random.random() * f_range
             
             # draws parameter p
             p = random.random() * 2 * np.pi

@@ -81,7 +81,7 @@ def datasets():
 @click.option('--x-range', default=5, help='the guaranteed range of output x [-x_range, x_range]')
 @click.option('--x-length', default=1000, help='the number of sampled x')
 @click.option('--y-range', default=30, help='the guaranteed range of output y [-y_range, y_range]')
-@click.option('--f-range', default=5, help='the range of f [-f_range, f_range]')
+@click.option('--f-range', default=10, help='the range of f [0, f_range]')
 def sin_mix(root, train_ratio, **config):
     """
     Creates a sin-mix dataset
@@ -94,7 +94,7 @@ def sin_mix(root, train_ratio, **config):
         x_range (int): the guaranteed range of output x [-x_range, x_range] (default=5)
         x_length (int): the number of sampled x (default: 1000)
         y_range (int): the guaranteed range of output y [-y_range, y_range] (default=30)
-        f_range (int): the range of f [-f_range, f_range] (default: 5)
+        f_range (int): the range of f [0, f_range] (default: 5)
     """
     from datasets.in_1d.sin_mix import create
     create_dataset("sin-mix", root, train_ratio, create, **config)
