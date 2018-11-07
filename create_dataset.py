@@ -75,7 +75,7 @@ def datasets():
 
 @click.command()
 @click.argument('root')
-@click.option('--train-ratio', default=0.1, help='size of the dataset')
+@click.option('--train-ratio', default=0.9, help='size of the dataset')
 @click.option('--size', default=60000, help='size of the dataset')
 @click.option('--nb-sin', default=1, help='the number of sinus in a mix')
 @click.option('--x-range', default=5, help='the guaranteed range of output x [-x_range, x_range]')
@@ -102,7 +102,7 @@ def sin_mix(root, train_ratio, **config):
 
 @click.command()
 @click.argument('root')
-@click.option('--train-ratio', default=0.1, help='size of the dataset')
+@click.option('--train-ratio', default=0.9, help='size of the dataset')
 @click.option('--size', default=60000, help='size of the dataset')
 @click.option('--x-range', default=5, help='the guaranteed range of output x [-x_range, x_range]')
 @click.option('--x-length', default=1000, help='the number of sampled x')
@@ -125,7 +125,7 @@ def lines(root, train_ratio, **config):
 
 @click.command()
 @click.argument('root')
-@click.option('--train-ratio', default=0.1, help='size of the dataset')
+@click.option('--train-ratio', default=0.9, help='size of the dataset')
 @click.option('--size', default=60000, help='size of the dataset')
 @click.option('--x-range', default=5, help='the guaranteed range of output x [-x_range, x_range]')
 @click.option('--x-length', default=1000, help='the number of sampled x')
