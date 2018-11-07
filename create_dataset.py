@@ -77,14 +77,11 @@ def datasets():
 @click.argument('root')
 @click.option('--train-ratio', default=0.1, help='size of the dataset')
 @click.option('--size', default=60000, help='size of the dataset')
-@click.option('--nb-sin', default=3, help='the number of sinus in a mix')
-@click.option('--x-min', default=0, help='the min value of a sampled x')
-@click.option('--x-max', default=10, help='the max value of a sampled x')
+@click.option('--nb-sin', default=1, help='the number of sinus in a mix')
+@click.option('--x-range', default=5, help='the guaranteed range of output x [-x_range, x_range]')
 @click.option('--x-length', default=1000, help='the number of sampled x')
 @click.option('--y-range', default=30, help='the guaranteed range of output y [-y_range, y_range]')
-@click.option('--a-range', default=10, help='the range of a [-a_range, a_range]')
-@click.option('--b-range', default=5, help='the range of b [-b_range, b_range]')
-@click.option('--c-range', default=4, help='the range of c [-c_range, c_range]')
+@click.option('--f-range', default=5, help='the range of f [-f_range, f_range]')
 def sin_mix(root, train_ratio, **config):
     """
     Creates a sin-mix dataset
@@ -94,13 +91,10 @@ def sin_mix(root, train_ratio, **config):
         train-ratio (float): ratio of the train dataset
         size (int): the size of the dataset (default: 6000)
         nb_sin (int): the number of sinus in a mix (default: 3)
-        x_min (int): the min sampled x (default: 0)
-        x_max (int): the max sampled x (default: 10)
+        x_range (int): the guaranteed range of output x [-x_range, x_range] (default=5)
         x_length (int): the number of sampled x (default: 1000)
         y_range (int): the guaranteed range of output y [-y_range, y_range] (default=30)
-        a_range (int): the range of a [-a_range, a_range] (default: 10)
-        b_range (int): the range of b [-b_range, b_range] (default: 5)
-        c_range (int): the range of b [-c_range, c_range] (default: 4)
+        f_range (int): the range of f [-f_range, f_range] (default: 5)
     """
     from datasets.in_1d.sin_mix import create
     create_dataset("sin-mix", root, train_ratio, create, **config)
@@ -110,13 +104,9 @@ def sin_mix(root, train_ratio, **config):
 @click.argument('root')
 @click.option('--train-ratio', default=0.1, help='size of the dataset')
 @click.option('--size', default=60000, help='size of the dataset')
-@click.option('--x-min', default=0, help='the min value of a sampled x')
-@click.option('--x-max', default=10, help='the max value of a sampled x')
+@click.option('--x-range', default=5, help='the guaranteed range of output x [-x_range, x_range]')
 @click.option('--x-length', default=1000, help='the number of sampled x')
 @click.option('--y-range', default=30, help='the guaranteed range of output y [-y_range, y_range]')
-@click.option('--a-range', default=4, help='the range of a [-a_range, a_range]')
-@click.option('--b-range', default=5, help='the range of b \
-               [-b_range, b_range]')
 def lines(root, train_ratio, **config):
     """
     Creates a sin-mix dataset
@@ -125,13 +115,9 @@ def lines(root, train_ratio, **config):
         root (str): path where to save the dataset
         train-ratio (float): ratio of the train dataset
         size (int): the size of the dataset (default: 6000)
-        x_min (int): the min sampled x (default: 0)
-        x_max (int): the max sampled x (default: 10)
+        x_range (int): the guaranteed range of output x [-x_range, x_range] (default=5)
         x_length (int): the number of sampled x (default: 1000)
         y_range (int): the guaranteed range of output y [-y_range, y_range] (default=30)
-        a_range (int): the range of a [-a_range, a_range] (default: 4)
-        b_range (int): the range of b [-b_range,
-         b_range] (default: 5)
     """
     from datasets.in_1d.lines import create
     create_dataset("lines", root, train_ratio, create, **config)
@@ -141,13 +127,10 @@ def lines(root, train_ratio, **config):
 @click.argument('root')
 @click.option('--train-ratio', default=0.1, help='size of the dataset')
 @click.option('--size', default=60000, help='size of the dataset')
-@click.option('--x-min', default=0, help='the min value of a sampled x')
-@click.option('--x-max', default=10, help='the max value of a sampled x')
+@click.option('--x-range', default=5, help='the guaranteed range of output x [-x_range, x_range]')
 @click.option('--x-length', default=1000, help='the number of sampled x')
 @click.option('--y-range', default=30, help='the guaranteed range of output y [-y_range, y_range]')
-@click.option('--a-range', default=4, help='the range of parameter a [-a_range, a_range]')
-@click.option('--b-range', default=4, help='the range of parameter b [-b_range, b_range]')
-@click.option('--c-range', default=4, help='the range of parameter c [-c_range, c_range]')
+@click.option('--h-range', default=4, help='the range of parameter h [-h_range, h_range]')
 def parabolas(root, train_ratio, **config):
     """
     Creates a sin-mix dataset
@@ -156,13 +139,10 @@ def parabolas(root, train_ratio, **config):
         root (str): path where to save the dataset
         train-ratio (float): ratio of the train dataset
         size (int): the size of the dataset (default: 6000)
-        x_min (int): the min sampled x (default: 0)
-        x_max (int): the max sampled x (default: 10)
+        x_range (int): the guaranteed range of output x [-x_range, x_range] (default=5)
         x_length (int): the number of sampled x (default: 1000)
         y_range (int): the guaranteed range of output y [-y_range, y_range] (default=30)
-        a_range (int): the range of parameter a [-a_range, a_range] (default: 4)
-        b_range (int): the range of parameter b [-b_range, b_range] (default: 4)
-        c_range (int): the range of parameter c [-c_range, c_range] (default: 4)
+        h_range (int): the range of parameter h [-h_range, h_range] (default: 4)
     """
     from datasets.in_1d.parabolas import create
     create_dataset("parabolas", root, train_ratio, create, **config)
