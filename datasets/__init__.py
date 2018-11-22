@@ -55,11 +55,10 @@ def load_dataset_config(dataset_path):
     return dataset_config
 
 
-def load_dataset(dataset_type, dataset_path, train=False):
+def load_dataset(dataset_path, train=False):
     """Loads a dataset
 
     Args:
-        dataset_type (str): type of the dataset
         dataset_path (str): path of the dataset
         train (bool): flag to load the training dataset
                       instead of the test dataset
@@ -67,6 +66,8 @@ def load_dataset(dataset_type, dataset_path, train=False):
     Returns:
         DatasetClass: the dataset with the right class
     """
+    dataset_config = load_dataset_config(dataset_path)
+    dataset_type = dataset_config['dataset_type']
     DatasetClass = get_dataset_class(dataset_type)
     dataset = DatasetClass(dataset_path, train=train)
     return dataset
