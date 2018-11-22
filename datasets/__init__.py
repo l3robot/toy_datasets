@@ -39,7 +39,7 @@ def get_dataset_class(dataset_type):
     return DatasetClass
 
 
-def load_config(dataset_path):
+def load_dataset_config(dataset_path):
     """Loads a dataset config
 
     Args:
