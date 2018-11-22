@@ -1,6 +1,7 @@
 """This module defines functions and classes related to datasets
 """
 import os
+import json
 import pkgutil
 
 
@@ -54,7 +55,7 @@ def load_dataset_config(dataset_path):
     return dataset_config
 
 
-def load_dataset(dataset_path, train=False):
+def load_dataset(dataset_type, dataset_path, train=False):
     """Loads a dataset
 
     Args:
